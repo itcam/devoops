@@ -25,7 +25,7 @@ SECRET_KEY = '3d!xpd(rhr#ba=y1yg7#(=w%@)dldb@)lija(9(v2jg_(+prke'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -75,10 +75,15 @@ WSGI_APPLICATION = 'devoops.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'devoops', 
+        'USER':'dev',
+        'PASSWORD':'dev',
+        'HOST':'localhost',
+        'PORT':3306,
     }
 }
+
 
 
 # Password validation
@@ -113,8 +118,25 @@ USE_L10N = True
 
 USE_TZ = True
 
+LANGUAGE_CODE = 'zh-Hans'
+USE_TZ = True
+TIME_ZONE = 'Asia/Shanghai'
+# TIME_ZONE = 'Asia/Shanghai'
+
+USE_I18N = True
+
+USE_L10N = True
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
+
+LOGIN_URL = '/user/login/'
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static')
+]
+
+LOG_LEVEL= DEBUG
+LOG_DIR = os.path.join(BASE_DIR, 'logs')
