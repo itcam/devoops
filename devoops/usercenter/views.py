@@ -1,9 +1,15 @@
 #!coding:utf-8
+from django.http import HttpResponse 
 from django.shortcuts import render
 #from usercenter.models import UserSerializer
 from usercenter.models import *
 from rest_framework import routers, serializers, viewsets
+from rest_framework import generics
+from rest_framework import versioning
 from django.contrib.auth.models import User
+from libs.const import *
+from libs.api_utils import render_response_html,http_response_json_v2
+from rest_framework.test import APIRequestFactory
 
 # Create your views here.
 
@@ -40,7 +46,13 @@ from django.contrib.auth.decorators import login_required
 # from jperm.ansible_api import MyRunner
 #import zipfile
 #from libs.const import *
-#from libs.api_utils import http_response_html,http_response_json
+from libs.api_utils import http_response_html,http_response_json
+
+
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from models import user_group,GroupSerializer
 
 
 def login(request):
@@ -50,11 +62,12 @@ def login(request):
     if request.user.is_authenticated():
         return HttpResponseRedirect('/user/index/')
     if request.method == 'GET':
-        return render_to_response('page_user_login_2.html',msg, RequestContext(request))
-
+        data = dict()
+        return render_response_html(request, 'login.html', data)
     else:
         username = request.POST.get('username')
         password = request.POST.get('password')
+        print username,password
         if username and password:
             user = authenticate(username=username, password=password)
             if user is not None:
@@ -70,10 +83,10 @@ def login(request):
                     msg = '用户未激活'
             else:
                 status= FAIL_STATUS
-                msg = '用户名或密码错误'
+                msg = '用户名或密码错误1'
         else:
             status= FAIL_STATUS
-            msg = '用户名或密码错误'
+            msg = '用户名或密码错误1'
     return http_response_json(status=status, msg=msg)
 
 
@@ -82,10 +95,87 @@ def logout(request):
     auth_logout(request)
     return HttpResponseRedirect('/user/login/')
 
+@login_required
+def index(request):
+    data = dict()
+    return render_response_html(request,'sidebar.html',data)
+
+
+@api_view(['GET', 'POST'])
+def user_group_list(request):
+    if request.method == 'GET':
+        queryset = user_group.objects.all()
+        serializer = GroupSerializer
+        versioning_class = versioning.QueryParameterVersioning
+        return Response(serializer.data,status=status.HTTP_302_FOUND)
+        #return HttpResponse(serializer.data,status=status.HTTP_302_FOUND)
+        #return HttpResponse("haha")
+    elif request.method == 'POST':
+        print "POST................."
+        serializer = GroupSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 # def reset(request):
 #     email = request.POST.get('email')
     
 
     
 
+class UserList(generics.ListCreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    versioning_class = versioning.QueryParameterVersioning  # 版本
+    print "--------------",serializer_class.data,status.HTTP_302_FOUND
+    #return Response(serializer_class.data, status=status.HTTP_400_BAD_REQUEST)
 
+    #def post(self, request, *args, **kwargs):
+    #    return self.create(request, *args, **kwargs)
+
+
+@api_view(['GET', 'POST'])
+def group_list(request):
+    """
+    List all snippets, or create a new snippet.
+    """
+    if request.method == 'GET':
+        usergroup = user_group.objects.all()
+        serializer = GroupSerializer(usergroup, many=True)
+        return http_response_json_v2(status.HTTP_200_OK,SUCCESS_MSG,serializer.data)
+
+    elif request.method == 'POST':
+        serializer = GroupSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return http_response_json_v2(status.HTTP_201_CREATED,SUCCESS_MSG,serializer.data)
+        return http_response_json_v2(status.HTTP_400_BAD_REQUEST,FAIL_MSG,serializer.data)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+def snippet_detail(request, pk):
+    """
+    Retrieve, update or delete a snippet instance.
+    """
+    try:
+        snippet = user_group.objects.get(pk=pk)
+    except user_group.DoesNotExist:
+        #return Response(status=status.HTTP_404_NOT_FOUND)
+        return http_response_json_v2(status.HTTP_404_NOT_FOUND,FAIL_MSG)
+
+    if request.method == 'GET':
+        serializer = GroupSerializer(snippet)
+        return http_response_json_v2(status.HTTP_200_OK,SUCCESS_MSG,serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = GroupSerializer(snippet, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            #return Response(serializer.data)
+            return http_response_json_v2(serializer.data)
+        #return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return http_response_json_v2(status.HTTP_400_BAD_REQUEST,FAIL_MSG,serializer.errors)
+
+    elif request.method == 'DELETE':
+        snippet.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

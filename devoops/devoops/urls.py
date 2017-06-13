@@ -15,10 +15,14 @@ Including another URLconf
 """
 from django.conf.urls import url,include
 from django.contrib import admin
+#from two_factor.urls import urlpatterns as tf_urls
+#from two_factor.gateways.twilio.urls import urlpatterns as tf_twilio_urls
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^user/', include('usercenter.urls')),
     url(r'^api/', include('router.urls')),
-    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
+    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+#    url(r'', include('two_factor.urls', 'two_factor')),
+#    url(r'^tf/', include(tf_urls + tf_twilio_urls, 'two_factor')),
 ]
